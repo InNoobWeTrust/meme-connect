@@ -1,43 +1,34 @@
-#[derive(Debug)]
-struct ShadowTrace {
-    shadow_of_rune: usize,
-    rune_position: usize,
-}
+extern crate rand;
 
-fn shadow_tracing<'a, DI>(
-    on_track: &mut DI,
-    shadow_position: usize,
-    look_up_to_postion: usize,
-) -> Option<ShadowTrace>
-where
-    DI: DoubleEndedIterator<Item = &'a usize> + ExactSizeIterator<Item = &'a usize>,
-{
-    if let Some((rune_position, &shadow_of_rune)) = if shadow_position <= look_up_to_postion {
-        on_track
-            .enumerate()
-            .skip(shadow_position)
-            .take(look_up_to_postion - shadow_position)
-            .find(|&(_pos, &rune)| rune != 0)
-    } else {
-        on_track
-            .enumerate()
-            .skip(look_up_to_postion)
-            .rev()
-            .skip_while(|&(pos, &_rune)| pos > shadow_position)
-            .take(shadow_position - look_up_to_postion)
-            .find(|&(_pos, &rune)| rune != 0)
-    } {
-        return Some(ShadowTrace {
-            shadow_of_rune,
-            rune_position,
-        });
-    }
-    None
-}
+use rand::prelude::*;
+
+use meme_connect::*;
 
 fn main() {
-    println!("Hello, world!");
-    let track = vec![1, 2, 0, 4, 0, 0, 0, 0, 0, 3, 0, 0, 4];
-    let shadow = shadow_tracing(&mut track.iter(), 6, 12).unwrap();
-    println!("Found shadow: {:#?}", shadow);
+    let mut rng = thread_rng();
+    let mut game_map = empty_map(10, 10);
+    println!("Game map:\n{}", _game_map_fmt(&game_map));
+    for meme in 1..=5 {
+        while let Err(err) = map_set_couple(
+            &mut game_map,
+            meme,
+            Point::random(&mut rng, 1, 10),
+            Point::random(&mut rng, 1, 10),
+        ) {
+            println!("Trying again due to error: {}", err);
+        }
+    }
+    println!(
+        "Game map after filling some couples:\n{}",
+        _game_map_fmt(&game_map)
+    );
+    const TRACK: &[Meme] = &[1, 2, 0, 3, 0, 0, 4, 0, 0, 5];
+    println!("Track: {:?}", TRACK);
+    let wall = rng.gen_range(0, TRACK.len() - 1);
+    let look_up_to = rng.gen_range(0, TRACK.len() - 1);
+    println!("Wall position: {}, look up position: {}", wall, look_up_to);
+    match shadow_tracing(&mut TRACK.iter(), wall, look_up_to) {
+        Some(shadow) => println!("{:#?}", shadow),
+        None => println!("Cannot find subject in range that can cast shadow!"),
+    }
 }
