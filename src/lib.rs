@@ -5,8 +5,6 @@ use rand::prelude::*;
 pub type Meme = usize;
 const NO_MEME: Meme = 0;
 
-pub type GameMap = Vec<Vec<Meme>>;
-
 #[derive(Debug)]
 pub struct ShadowTrace {
     meme: Meme,
@@ -20,74 +18,95 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn random(rng: &mut ThreadRng, from: Meme, to_exclusive: Meme) -> Self {
-        Point {
-            x: rng.gen_range(from, to_exclusive),
-            y: rng.gen_range(from, to_exclusive),
+    pub fn rand(rng: &mut ThreadRng, from: &mut Vec<Point>) -> Point {
+        from.remove(rng.gen_range(0, from.len()))
+    }
+}
+
+pub struct GameMap {
+    data: Vec<Vec<Meme>>,
+}
+
+impl GameMap {
+    pub fn new(width: usize, height: usize) -> GameMap {
+        GameMap {
+            data: vec![vec![NO_MEME; width]; height],
         }
     }
-}
 
-pub fn empty_map(width: usize, height: usize) -> GameMap {
-    vec![vec![NO_MEME; width]; height]
-}
+    pub fn _fmt(&self) -> String {
+        self.data
+            .iter()
+            .map(|line| {
+                format!(
+                    "|{}|",
+                    line.iter()
+                        .map(|meme| format!("{:^5}", meme))
+                        .collect::<Vec<String>>()
+                        .join("|")
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
 
-pub fn _game_map_fmt(game_map: &GameMap) -> String {
-    game_map
-        .iter()
-        .map(|line| format!("{:?}", line))
-        .collect::<Vec<String>>()
-        .join("\n")
-}
+    pub fn check_border_block(&self, pos: Point) -> Result<(), String> {
+        if pos.x == 0 {
+            return Err("border left".to_string());
+        }
+        if pos.x == self.data[0].len() - 1 {
+            return Err("border right".to_string());
+        }
+        if pos.y == 0 {
+            return Err("border top".to_string());
+        }
+        if pos.y == self.data.len() - 1 {
+            return Err("border bottom".to_string());
+        }
+        Ok(())
+    }
 
-pub fn map_check_border_pos(game_map: &GameMap, pos: Point) -> Result<(), String> {
-    if pos.x == 0 {
-        return Err("border left".to_string());
+    pub fn collect_empty_blocks(&self) -> Vec<Point> {
+        self.data
+            .iter()
+            .enumerate()
+            .flat_map(|(y, line)| {
+                line.iter()
+                    .enumerate()
+                    // Only take empty block
+                    .filter(|(_x, &val)| NO_MEME == val)
+                    .map(move |(x, &_val)| Point { x, y })
+            })
+            .filter(|&block| {
+                if let Ok(()) = self.check_border_block(block) {
+                    true
+                } else {
+                    false
+                }
+            })
+            .collect::<Vec<Point>>()
     }
-    if pos.x == game_map[0].len() - 1 {
-        return Err("border right".to_string());
-    }
-    if pos.y == 0 {
-        return Err("border top".to_string());
-    }
-    if pos.y == game_map.len() - 1 {
-        return Err("border bottom".to_string());
-    }
-    Ok(())
-}
 
-pub fn map_check_dual_pos(game_map: &GameMap, pos1: Point, pos2: Point) -> Result<(), String> {
-    if let Err(err) = map_check_border_pos(&game_map, pos1) {
-        return Err(format!("pos1 {:?} is at {}", pos1, err));
+    pub fn check_valid_empty_block(&self, pos: Point) -> Result<(), String> {
+        if let Err(err) = self.check_border_block(pos) {
+            return Err(format!("{:?} is at {}", pos, err));
+        }
+        match self.data[pos.y][pos.x] {
+            NO_MEME => Ok(()),
+            meme => Err(format!("{:?} occupied with {}", pos, meme)),
+        }
     }
-    if let Err(err) = map_check_border_pos(&game_map, pos2) {
-        return Err(format!("pos2 {:?} is at {}", pos2, err));
-    }
-    let old_pos1 = game_map[pos1.y][pos1.x];
-    let old_pos2 = game_map[pos2.y][pos2.x];
-    match (old_pos1, old_pos2) {
-        (NO_MEME, NO_MEME) => Ok(()),
-        (meme1, NO_MEME) => Err(format!("Position 1 occupied with {}", meme1)),
-        (NO_MEME, meme2) => Err(format!("Position 2 occupied with {}", meme2)),
-        (meme1, meme2) => Err(format!(
-            "Both position occupied with {} and {}",
-            meme1, meme2
-        )),
-    }
-}
 
-pub fn map_set_couple(
-    game_map: &mut GameMap,
-    meme: Meme,
-    pos1: Point,
-    pos2: Point,
-) -> Result<(), String> {
-    if let Err(err) = map_check_dual_pos(&game_map, pos1, pos2) {
-        return Err(err);
+    pub fn set_couple(&mut self, meme: Meme, pos1: Point, pos2: Point) -> Result<(), String> {
+        for &pos in [pos1, pos2].iter() {
+            if let Err(err) = self.check_valid_empty_block(pos) {
+                return Err(err);
+            }
+        }
+        self.data[pos1.y][pos1.x] = meme;
+        self.data[pos2.y][pos2.x] = meme;
+        Ok(())
     }
-    game_map[pos1.y][pos1.x] = meme;
-    game_map[pos2.y][pos2.x] = meme;
-    Ok(())
 }
 
 pub fn shadow_tracing<'a, TrackIterable>(
