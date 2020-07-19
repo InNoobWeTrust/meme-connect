@@ -7,11 +7,11 @@ use std::{
 };
 
 pub type Meme = usize;
-const NO_MEME: Meme = 0;
+pub const NO_MEME: Meme = 0;
 
 #[derive(Debug)]
 pub struct ShadowTrace {
-    meme: Meme,
+    pub meme: Meme,
     pos_on_track: usize,
 }
 
@@ -35,7 +35,7 @@ pub struct GameMap {
 
 impl GameMap {
     pub fn new(width: usize, height: usize) -> Option<GameMap> {
-        if 0 != width && 0 != height && 0 == (width * height) % 2 {
+        if 0 != width && 0 != height && 0 == ((width - 2) * (height - 2)) % 2 {
             Some(GameMap {
                 width,
                 height,
@@ -59,27 +59,16 @@ impl GameMap {
     }
 
     fn rows<'a>(&'a self) -> Vec<Take<Skip<Iter<'a, usize>>>> {
-        (0..self.height)
-            .into_iter()
-            .map(|y| self.row(y))
-            .collect::<Vec<_>>()
+        (0..self.height).map(|y| self.row(y)).collect::<Vec<_>>()
     }
 
     fn cols<'a>(&'a self) -> Vec<StepBy<Skip<Iter<'a, usize>>>> {
-        (0..self.width)
-            .into_iter()
-            .map(|x| self.col(x))
-            .collect::<Vec<_>>()
+        (0..self.width).map(|x| self.col(x)).collect::<Vec<_>>()
     }
 
     pub fn playground_blocks(&self) -> Vec<Block> {
         (1..self.width - 1)
-            .into_iter()
-            .flat_map(move |x| {
-                (1..self.height - 1)
-                    .into_iter()
-                    .map(move |y| Block::new(x, y))
-            })
+            .flat_map(move |x| (1..self.height - 1).map(move |y| Block::new(x, y)))
             .collect::<Vec<_>>()
     }
 
@@ -179,6 +168,34 @@ impl GameMap {
     //////////////////////////// Matching logic ///////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
+    /// After casting shadows on a wall, if 2 shadows with the same type have
+    /// no blocking shadow(s) in between, then there is a match
+    pub fn connect_shadows<'a, T>(shadow_wall: &'a mut T) -> Vec<(usize, usize)>
+    where
+        T: Iterator<Item = &'a Option<ShadowTrace>>,
+    {
+        let ungap = shadow_wall
+            .enumerate()
+            .filter_map(|(idx, possible_shadow)| {
+                if let Some(shadow) = possible_shadow {
+                    Some((idx, shadow))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<(usize, &ShadowTrace)>>();
+        ungap
+            .windows(2)
+            .filter_map(|w: &[(usize, &ShadowTrace)]| {
+                if w[0].1.meme == w[1].1.meme {
+                    Some((w[0].0, w[1].0))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
     pub fn shadow_tracing<'a, T>(
         on_track: &mut T,
         shadow_position: usize,
@@ -192,7 +209,7 @@ impl GameMap {
                 .enumerate()
                 .skip(shadow_position)
                 .take(look_up_to_postion - shadow_position + 1)
-                .inspect(|&(pos, &meme)| println!("=> tracing step: pos={}, meme={:?}", pos, meme))
+                //.inspect(|&(pos, &meme)| println!("=> tracing step: pos={}, meme={:?}", pos, meme))
                 .find(|&(_pos, &meme)| meme != NO_MEME)
         } else {
             on_track
@@ -200,7 +217,7 @@ impl GameMap {
                 .skip(look_up_to_postion)
                 .rev()
                 .skip_while(|&(pos, &_meme)| pos > shadow_position)
-                .inspect(|&(pos, &meme)| println!("=> tracing step: pos={}, meme={:?}", pos, meme))
+                //.inspect(|&(pos, &meme)| println!("=> tracing step: pos={}, meme={:?}", pos, meme))
                 .find(|&(_pos, &meme)| meme != NO_MEME)
         } {
             return Some(ShadowTrace { meme, pos_on_track });
@@ -208,8 +225,8 @@ impl GameMap {
         None
     }
 
-    pub fn cast_horizontal_shadows<'a>(
-        &'a self,
+    pub fn cast_horizontal_shadows(
+        &self,
         horizontal_wall_idx: usize,
         look_up_to_horizontal_idx: usize,
     ) -> Vec<Option<ShadowTrace>> {
@@ -221,8 +238,8 @@ impl GameMap {
             .collect::<_>()
     }
 
-    pub fn cast_vertical_shadows<'a>(
-        &'a self,
+    pub fn cast_vertical_shadows(
+        &self,
         vertical_wall_idx: usize,
         look_up_to_vertical_idx: usize,
     ) -> Vec<Option<ShadowTrace>> {
@@ -233,52 +250,85 @@ impl GameMap {
             })
             .collect::<_>()
     }
+
+    pub fn still_has_move(&self) -> bool {
+        (2..self.width - 2) // Vertical wall low vision (range 1, whatever on wall)
+            .map(|col| self.cast_vertical_shadows(col, col))
+            .map(|shadows| GameMap::connect_shadows(&mut shadows.iter()))
+            .any(|couples| !couples.is_empty())
+            || (0..self.width - 3) // Look to the right
+                .map(|col| self.cast_vertical_shadows(col, self.width - 2))
+                .map(|shadows| GameMap::connect_shadows(&mut shadows.iter()))
+                .any(|couples| !couples.is_empty())
+            || (2..self.width - 1) // Look to the left
+                .map(|col| self.cast_vertical_shadows(col, 1))
+                .map(|shadows| GameMap::connect_shadows(&mut shadows.iter()))
+                .any(|couples| !couples.is_empty())
+            || (2..self.height - 2) // Horizontal wall low vision (range 1, whatever on wall)
+                .map(|row| self.cast_horizontal_shadows(row, row))
+                .map(|shadows| GameMap::connect_shadows(&mut shadows.iter()))
+                .any(|couples| !couples.is_empty())
+            || (0..self.height - 3) // Look down
+                .map(|row| self.cast_horizontal_shadows(row, self.height - 2))
+                .map(|shadows| GameMap::connect_shadows(&mut shadows.iter()))
+                .any(|couples| !couples.is_empty())
+            || (2..self.width - 1) // Look up
+                .map(|row| self.cast_horizontal_shadows(row, 1))
+                .map(|shadows| GameMap::connect_shadows(&mut shadows.iter()))
+                .any(|couples| !couples.is_empty())
+    }
 }
 
 #[cfg(test)]
 mod test_tracing_shadow {
-    extern crate rand;
-
     use crate::*;
 
-    const TRACK: &[Meme] = &[1, 2, 0, 3, 0, 0, 4, 0, 0, 5];
-
     #[test]
-    fn test_wall_subject_different_position() {
-        println!("Track: {:?}", TRACK);
-        let mut rng = thread_rng();
-        let mut wall = rng.gen_range(0, TRACK.len() - 1);
-        while TRACK[wall] != 0 {
-            wall = rng.gen_range(0, TRACK.len() - 1);
-        }
-        let mut look_up_to = rng.gen_range(0, TRACK.len() - 1);
-        while look_up_to == wall {
-            look_up_to = rng.gen_range(0, TRACK.len() - 1);
-        }
-        println!("Wall position: {}, look up position: {}", wall, look_up_to);
-        GameMap::shadow_tracing(&mut TRACK.iter(), wall, look_up_to).unwrap();
+    fn test_shadow_connections() -> Result<(), String> {
+        let mut game_map = GameMap::new(6, 3).unwrap();
+        println!("Game map:\n{}", game_map._fmt());
+        game_map.set_meme(1, &Block::new(1, 1))?;
+        game_map.set_meme(1, &Block::new(4, 1))?;
+        println!("Game map after filling some couples:\n{}", game_map._fmt());
+        let shadows = game_map.cast_horizontal_shadows(0, game_map.width);
+        let couples = GameMap::connect_shadows(&mut shadows.iter());
+        println!("couples: {:?}", couples);
+        assert_eq!(couples, &[(1, 4)]);
+        Ok(())
     }
 
     #[test]
-    fn test_wall_blocked() {
+    fn test_wall_subject() {
+        const TRACK: &[Meme] = &[1, 0, 0, 0, 0];
         println!("Track: {:?}", TRACK);
-        let mut rng = thread_rng();
-        let mut wall = rng.gen_range(0, TRACK.len() - 1);
-        while TRACK[wall] == 0 {
-            wall = rng.gen_range(0, TRACK.len() - 1);
-        }
-        let look_up_to = rng.gen_range(0, TRACK.len() - 1);
+        let wall = TRACK.len();
+        let look_up_to = 0;
         println!("Wall position: {}, look up position: {}", wall, look_up_to);
-        let shadow = GameMap::shadow_tracing(&mut TRACK.iter(), wall, look_up_to).unwrap();
-        println!("{:#?}", shadow);
-        assert_eq!(shadow.pos_on_track, wall);
-        assert_eq!(shadow.meme, TRACK[wall]);
+        let trace = GameMap::shadow_tracing(&mut TRACK.iter(), wall, look_up_to).unwrap();
+        assert_eq!(trace.pos_on_track, 0);
+        assert_eq!(trace.meme, 1);
+    }
+
+    #[test]
+    fn test_limited_vision() {
+        const TRACK: &[Meme] = &[1, 0, 0, 0, 0];
+        println!("Track: {:?}", TRACK);
+        let wall = TRACK.len();
+        let look_up_to = 1;
+        println!("Wall position: {}, look up position: {}", wall, look_up_to);
+        let possible_trace = GameMap::shadow_tracing(&mut TRACK.iter(), wall, look_up_to);
+        assert_eq!(possible_trace.is_none(), true);
     }
 
     #[test]
     fn test_wall_meets_subject() {
+        const TRACK: &[Meme] = &[1, 0, 2, 0, 0];
         println!("Track: {:?}", TRACK);
         println!("Wall position: 1, look up position: 1");
-        GameMap::shadow_tracing(&mut TRACK.iter(), 1, 1).unwrap();
+        let trace = GameMap::shadow_tracing(&mut TRACK.iter(), 2, 2).unwrap();
+        assert_eq!(trace.pos_on_track, 2);
+        assert_eq!(trace.meme, 2);
     }
 }
+
+pub fn main() {}
