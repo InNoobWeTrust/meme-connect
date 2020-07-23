@@ -1,11 +1,11 @@
 [package]
-name = "meme-connect"
+name = "meme_connect"
 version = "0.1.0"
 authors = ["InNoobWeTrust"]
 edition = "2018"
 
 [[bin]]
-name = "meme-connect"
+name = "meme_connect"
 path = "src/main.rs"
 
 [lib]

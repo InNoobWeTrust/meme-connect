@@ -4,7 +4,7 @@ extern crate meme_connect;
 
 use rand::prelude::*;
 
-use meme_connect::*;
+use meme_connect::prelude::*;
 
 fn main() -> Result<(), String> {
     let mut rng = thread_rng();
@@ -26,7 +26,7 @@ fn main() -> Result<(), String> {
     game_map.set_meme(10, &Block::new(6, 4))?;
     game_map.set_meme(10, &Block::new(6, 6))?;
     println!("Game map after filling some couples:\n{}", game_map._fmt());
-    let vertical_shadows = game_map.cast_vertical_shadows(5, game_map.width);
+    let vertical_shadows = game_map.cast_vertical_shadows(5, game_map.width - 1);
     println!(
         "Vertical shadows from the right:\n{:?}",
         vertical_shadows
@@ -37,7 +37,7 @@ fn main() -> Result<(), String> {
             })
             .collect::<Vec<Meme>>()
     );
-    let horizontal_shadows = game_map.cast_horizontal_shadows(5, game_map.height);
+    let horizontal_shadows = game_map.cast_horizontal_shadows(5, game_map.height - 1);
     println!(
         "Horizontal shadows from bottom:\n{:?}",
         horizontal_shadows
@@ -48,7 +48,7 @@ fn main() -> Result<(), String> {
             })
             .collect::<Vec<Meme>>()
     );
-    let couples = GameMap::connect_shadows(&mut vertical_shadows.iter());
+    let couples = Matcher::match_same(&mut vertical_shadows.iter());
     println!("couples: {:?}", couples);
     let check = game_map.still_has_move();
     println!("Is there any more moves? => {}", check);
