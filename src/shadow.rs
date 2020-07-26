@@ -2,53 +2,105 @@ use crate::meme::*;
 
 #[derive(Debug)]
 pub struct ShadowTrace {
-    pub pos_on_track: usize,
+    pub idx: usize,
     pub meme: Meme,
 }
 
-impl ShadowTrace {
-    /// Casting shadow onto a specific position. If shadow position already has something then
-    /// return it and not bother looking further
-    pub fn trace<'a, T>(
-        on_track: &mut T,
-        shadow_position: usize,
-        look_up_to_postion: usize,
-    ) -> Option<ShadowTrace>
-    where
-        T: DoubleEndedIterator<Item = &'a Meme> + ExactSizeIterator<Item = &'a Meme>,
-    {
-        if shadow_position >= on_track.len() || look_up_to_postion >= on_track.len() {
-            panic!("Wrong input");
-        } else if shadow_position <= look_up_to_postion {
-            on_track
-                .enumerate()
-                .skip(shadow_position)
-                .take(look_up_to_postion - shadow_position + 1)
-                //.inspect(|&(pos, &meme)| println!("=> tracing step: pos={}, meme={:?}", pos, meme))
-                .find(|&(_pos, &meme)| meme != NO_MEME)
+#[derive(Debug)]
+pub struct ShadowBlend {
+    pub traces: [Option<ShadowTrace>; 2],
+    pub blocked: bool,
+}
+
+impl ShadowBlend {
+    /// Casting shadows onto a specific wall position.
+    /// If wall position already has something then return it and not bother
+    /// looking further.
+    pub fn from(
+        track: Vec<Meme>,
+        wall_idx: usize,
+        cast_ranges: (Option<usize>, Option<usize>),
+    ) -> ShadowBlend {
+        if wall_idx >= track.len() {
+            panic!("Wrong wall position");
+        } else if cast_ranges
+            .0
+            .map_or_else(|| false, |range_bwd| range_bwd > wall_idx)
+        {
+            panic!("Wrong cast range backward");
+        } else if cast_ranges
+            .1
+            .map_or_else(|| false, |range_fwd| wall_idx + range_fwd >= track.len())
+        {
+            panic!("Wrong cast range forward");
+        } else if track[wall_idx] != NO_MEME {
+            ShadowBlend {
+                traces: [None, None],
+                blocked: true,
+            }
         } else {
-            on_track
+            let range_bwd = cast_ranges.0.unwrap_or_else(|| wall_idx + 1);
+            let range_fwd = cast_ranges.1.unwrap_or_else(|| track.len() - 1 - wall_idx);
+            let track_len = track.len();
+            let trace_bwd = track
+                .iter()
                 .enumerate()
-                .skip(look_up_to_postion)
                 .rev()
-                .skip_while(|&(pos, &_meme)| pos > shadow_position)
-                //.inspect(|&(pos, &meme)| println!("=> tracing step: pos={}, meme={:?}", pos, meme))
-                .find(|&(_pos, &meme)| meme != NO_MEME)
+                .skip(track_len - wall_idx) // Skip wall
+                .take(range_bwd)
+                .find(|&(_pos, meme)| *meme != NO_MEME)
+                .map(|(pos_on_track, &meme)| ShadowTrace {
+                    idx: pos_on_track,
+                    meme,
+                });
+            let trace_fwd = track
+                .iter()
+                .enumerate()
+                .skip(wall_idx + 1) // Skip wall
+                .take(range_fwd)
+                .find(|&(_pos, meme)| *meme != NO_MEME)
+                .map(|(pos_on_track, &meme)| ShadowTrace {
+                    idx: pos_on_track,
+                    meme,
+                });
+            ShadowBlend {
+                traces: [trace_bwd, trace_fwd],
+                blocked: false,
+            }
         }
-        .map(|(pos_on_track, &meme)| ShadowTrace { pos_on_track, meme })
     }
 
-    pub fn trace_multi<'a, T, U>(
-        tracks: &mut T,
-        shadow_position: usize,
-        look_up_to_postion: usize,
-    ) -> Vec<Option<ShadowTrace>>
-    where
-        T: Iterator<Item = U>,
-        U: DoubleEndedIterator<Item = &'a Meme> + ExactSizeIterator<Item = &'a Meme>,
-    {
+    pub fn pack_from(
+        tracks: Vec<Vec<Meme>>,
+        wall_idx: usize,
+        cast_ranges: (Option<usize>, Option<usize>),
+    ) -> Vec<ShadowBlend> {
         tracks
-            .map(|mut track| ShadowTrace::trace(&mut track, shadow_position, look_up_to_postion))
+            .iter()
+            .map(|track| ShadowBlend::from(track.to_vec(), wall_idx, cast_ranges))
             .collect::<_>()
+    }
+
+    pub fn memes(&self) -> Vec<Meme> {
+        let mut memes = Vec::new();
+        if !self.blocked {
+            for trace in self.traces.iter().filter_map(|m| m.as_ref()) {
+                memes.push(trace.meme);
+            }
+        }
+        memes
+    }
+
+    pub fn intersect_meme(&self, other: &Self) -> Vec<Meme> {
+        let mut intersection: Vec<Meme> = Vec::new();
+        let this_memes = self.memes();
+        let mut other_memes = other.memes();
+        for meme in this_memes {
+            if let Some(position) = other_memes.iter().position(|&other| other == meme) {
+                intersection.push(meme);
+                other_memes.remove(position);
+            }
+        }
+        intersection
     }
 }

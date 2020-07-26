@@ -22,34 +22,28 @@ fn main() -> Result<(), String> {
         panic!("Failed to set meme in regions: {}", err);
     }
     game_map.set_meme(10, &Block::new(4, 4))?;
-    game_map.set_meme(10, &Block::new(4, 6))?;
-    game_map.set_meme(10, &Block::new(6, 4))?;
     game_map.set_meme(10, &Block::new(6, 6))?;
     println!("Game map after filling some couples:\n{}", game_map._fmt());
-    let vertical_shadows = game_map.cast_vertical_shadows(5, game_map.width - 1);
+    let vertical_shadows = game_map.cast_vertical_shadows(5, (None, None));
     println!(
-        "Vertical shadows from the right:\n{:?}",
+        "Vertical shadows:\n{:?}",
         vertical_shadows
             .iter()
-            .map(|shadow| match &shadow.as_ref() {
-                Some(trace) => trace.meme,
-                None => NO_MEME,
-            })
-            .collect::<Vec<Meme>>()
+            .map(|blend| blend.memes())
+            .collect::<Vec<_>>()
     );
-    let horizontal_shadows = game_map.cast_horizontal_shadows(5, game_map.height - 1);
+    let vertical_couples = Matcher::match_same(&vertical_shadows);
+    println!("Vertical couples: {:?}", &vertical_couples);
+    let horizontal_shadows = game_map.cast_horizontal_shadows(5, (None, None));
     println!(
-        "Horizontal shadows from bottom:\n{:?}",
+        "Horizontal shadows:\n{:?}",
         horizontal_shadows
             .iter()
-            .map(|shadow| match &shadow.as_ref() {
-                Some(trace) => trace.meme,
-                None => NO_MEME,
-            })
-            .collect::<Vec<Meme>>()
+            .map(|blend| blend.memes())
+            .collect::<Vec<_>>()
     );
-    let couples = Matcher::match_same(&mut vertical_shadows.iter());
-    println!("couples: {:?}", couples);
+    let horizontal_couples = Matcher::match_same(&horizontal_shadows);
+    println!("Horizontal couples: {:?}", &horizontal_couples);
     let check = game_map.still_has_move();
     println!("Is there any more moves? => {}", check);
     Ok(())

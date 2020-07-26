@@ -2,12 +2,7 @@ extern crate rand;
 
 use rand::prelude::*;
 
-use crate::{block::Block, matcher::Matcher, meme::*, shadow::ShadowTrace};
-
-use std::{
-    iter::{Skip, StepBy, Take},
-    slice::Iter,
-};
+use crate::{block::Block, matcher::Matcher, meme::*, shadow::ShadowBlend};
 
 pub struct GameMap {
     pub width: usize,
@@ -32,23 +27,33 @@ impl GameMap {
     ////////////////////////////// View of data ///////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
 
-    pub fn cell<'a>(&'a self, blk: &Block) -> Option<&'a Meme> {
-        self.row(blk.y).nth(blk.x)
+    pub fn cell(&self, blk: &Block) -> Meme {
+        self.data[blk.y * self.width + blk.x]
     }
 
-    fn col<'a>(&'a self, index: usize) -> StepBy<Skip<Iter<'a, Meme>>> {
-        self.data.iter().skip(index).step_by(self.width)
+    fn col(&self, index: usize) -> Vec<Meme> {
+        self.data
+            .iter()
+            .skip(index)
+            .step_by(self.width)
+            .copied()
+            .collect::<Vec<_>>()
     }
 
-    fn row<'a>(&'a self, index: usize) -> Take<Skip<Iter<'a, Meme>>> {
-        self.data.iter().skip(index * self.width).take(self.width)
+    fn row(&self, index: usize) -> Vec<Meme> {
+        self.data
+            .iter()
+            .skip(index * self.width)
+            .take(self.width)
+            .copied()
+            .collect::<Vec<_>>()
     }
 
-    fn rows<'a>(&'a self) -> Vec<Take<Skip<Iter<'a, Meme>>>> {
+    fn rows(&self) -> Vec<Vec<Meme>> {
         (0..self.height).map(|y| self.row(y)).collect::<Vec<_>>()
     }
 
-    fn cols<'a>(&'a self) -> Vec<StepBy<Skip<Iter<'a, Meme>>>> {
+    fn cols(&self) -> Vec<Vec<Meme>> {
         (0..self.width).map(|x| self.col(x)).collect::<Vec<_>>()
     }
 
@@ -60,11 +65,12 @@ impl GameMap {
 
     pub fn _fmt(&self) -> String {
         self.rows()
-            .iter_mut()
+            .iter()
             .map(|line| {
                 format!(
                     "|{}|",
-                    line.map(|meme| format!("{:^5}", meme))
+                    line.iter()
+                        .map(|meme| format!("{:^5}", meme))
                         .collect::<Vec<_>>()
                         .join("|")
                 )
@@ -159,52 +165,28 @@ impl GameMap {
 
     pub fn cast_horizontal_shadows(
         &self,
-        horizontal_wall_idx: usize,
-        look_up_to_horizontal_idx: usize,
-    ) -> Vec<Option<ShadowTrace>> {
-        ShadowTrace::trace_multi(
-            &mut self.cols().into_iter(),
-            horizontal_wall_idx,
-            look_up_to_horizontal_idx,
-        )
+        wall_idx: usize,
+        cast_ranges: (Option<usize>, Option<usize>),
+    ) -> Vec<ShadowBlend> {
+        ShadowBlend::pack_from(self.cols(), wall_idx, cast_ranges)
     }
 
     pub fn cast_vertical_shadows(
         &self,
-        vertical_wall_idx: usize,
-        look_up_to_vertical_idx: usize,
-    ) -> Vec<Option<ShadowTrace>> {
-        ShadowTrace::trace_multi(
-            &mut self.rows().into_iter(),
-            vertical_wall_idx,
-            look_up_to_vertical_idx,
-        )
+        wall_idx: usize,
+        cast_ranges: (Option<usize>, Option<usize>),
+    ) -> Vec<ShadowBlend> {
+        ShadowBlend::pack_from(self.rows(), wall_idx, cast_ranges)
     }
 
     pub fn still_has_move(&self) -> bool {
-        (2..self.width - 2) // Vertical wall low vision (range 1, whatever on wall)
-            .map(|col| self.cast_vertical_shadows(col, col))
-            .map(|shadows| Matcher::match_same(&mut shadows.iter()))
+        (0..self.width - 1) // Vertical walls
+            .map(|col| self.cast_vertical_shadows(col, (None, None)))
+            .map(|shadows| Matcher::match_same(&shadows))
             .any(|couples| !couples.is_empty())
-            || (0..self.width - 3) // Look to the right
-                .map(|col| self.cast_vertical_shadows(col, self.width - 2))
-                .map(|shadows| Matcher::match_same(&mut shadows.iter()))
-                .any(|couples| !couples.is_empty())
-            || (2..self.width - 1) // Look to the left
-                .map(|col| self.cast_vertical_shadows(col, 1))
-                .map(|shadows| Matcher::match_same(&mut shadows.iter()))
-                .any(|couples| !couples.is_empty())
-            || (2..self.height - 2) // Horizontal wall low vision (range 1, whatever on wall)
-                .map(|row| self.cast_horizontal_shadows(row, row))
-                .map(|shadows| Matcher::match_same(&mut shadows.iter()))
-                .any(|couples| !couples.is_empty())
-            || (0..self.height - 3) // Look down
-                .map(|row| self.cast_horizontal_shadows(row, self.height - 2))
-                .map(|shadows| Matcher::match_same(&mut shadows.iter()))
-                .any(|couples| !couples.is_empty())
-            || (2..self.width - 1) // Look up
-                .map(|row| self.cast_horizontal_shadows(row, 1))
-                .map(|shadows| Matcher::match_same(&mut shadows.iter()))
+            || (1..self.height - 1) // Horizontal walls
+                .map(|row| self.cast_horizontal_shadows(row, (None, None)))
+                .map(|shadows| Matcher::match_same(&shadows))
                 .any(|couples| !couples.is_empty())
     }
 }
