@@ -1,33 +1,15 @@
 mod block;
+mod direction;
 mod game_map;
 mod matcher;
 mod meme;
 pub mod prelude;
 mod shadow;
+mod track;
 
 #[cfg(test)]
 mod test_tracing_shadow {
-    use crate::{block::Block, game_map::GameMap, matcher::Matcher, meme::*, shadow::ShadowBlend};
-
-    #[test]
-    fn test_shadow_connections() -> Result<(), String> {
-        let mut game_map = GameMap::new(6, 6).unwrap();
-        println!("Game map:\n{}", game_map._fmt());
-        game_map.set_meme(1, &Block::new(1, 1))?;
-        game_map.set_meme(1, &Block::new(4, 4))?;
-        println!("Game map after filling some couples:\n{}", game_map._fmt());
-        let horizontal_shadows = game_map.cast_horizontal_shadows(0, (None, None));
-        println!("Horizontal shadows: {:?}", horizontal_shadows);
-        let horizontal_couples = Matcher::match_same(&horizontal_shadows);
-        println!("Horizontal couples: {:?}", horizontal_couples);
-        assert_eq!(horizontal_couples, &[(1, 4)]);
-        let vertical_shadows = game_map.cast_vertical_shadows(2, (None, None));
-        println!("Vertical shadows: {:?}", vertical_shadows);
-        let vertical_couples = Matcher::match_same(&vertical_shadows);
-        println!("Vertical couples: {:?}", vertical_couples);
-        assert_eq!(vertical_couples, &[(1, 4)]);
-        Ok(())
-    }
+    use crate::prelude::*;
 
     #[test]
     fn test_wall_subject() {
@@ -65,5 +47,25 @@ mod test_tracing_shadow {
         assert_eq!(traces.traces[0].as_ref().unwrap().meme, 2);
         assert_eq!(traces.traces[1].as_ref().unwrap().idx, 4);
         assert_eq!(traces.traces[1].as_ref().unwrap().meme, 3);
+    }
+
+    #[test]
+    fn test_shadow_connections() -> Result<(), String> {
+        let mut game_map = GameMap::new(6, 6).unwrap();
+        println!("Game map:\n{}", game_map._fmt());
+        game_map.set_meme(1, &Block { x: 1, y: 1 })?;
+        game_map.set_meme(1, &Block { x: 4, y: 4 })?;
+        println!("Game map after filling some couples:\n{}", game_map._fmt());
+        let horizontal_shadows = game_map.cast_horizontal_shadows(0, (None, None));
+        println!("Horizontal shadows: {:?}", horizontal_shadows);
+        let horizontal_couples = Matcher::match_same(&horizontal_shadows);
+        println!("Horizontal couples: {:?}", horizontal_couples);
+        assert_eq!(horizontal_couples, &[(1, 4)]);
+        let vertical_shadows = game_map.cast_vertical_shadows(2, (None, None));
+        println!("Vertical shadows: {:?}", vertical_shadows);
+        let vertical_couples = Matcher::match_same(&vertical_shadows);
+        println!("Vertical couples: {:?}", vertical_couples);
+        assert_eq!(vertical_couples, &[(1, 4)]);
+        Ok(())
     }
 }

@@ -21,8 +21,8 @@ fn main() -> Result<(), String> {
     if let Err(err) = game_map.set_meme_regions(&mut (1usize..), &mut interest_blocks, &mut rng) {
         panic!("Failed to set meme in regions: {}", err);
     }
-    game_map.set_meme(10, &Block::new(4, 4))?;
-    game_map.set_meme(10, &Block::new(6, 6))?;
+    game_map.set_meme(10, &Block { x: 4, y: 4 })?;
+    game_map.set_meme(10, &Block { x: 6, y: 6 })?;
     println!("Game map after filling some couples:\n{}", game_map._fmt());
     let vertical_shadows = game_map.cast_vertical_shadows(5, (None, None));
     println!(
@@ -46,5 +46,7 @@ fn main() -> Result<(), String> {
     println!("Horizontal couples: {:?}", &horizontal_couples);
     let check = game_map.still_has_move();
     println!("Is there any more moves? => {}", check);
+    let trace = game_map.connect(&Block { x: 4, y: 4 }, &Block { x: 6, y: 6 })?;
+    println!("Trace connection: {:?}", trace);
     Ok(())
 }

@@ -1,8 +1,7 @@
 extern crate rand;
 
+use crate::{block::Block, matcher::Matcher, meme::*, shadow::ShadowBlend, track::*};
 use rand::prelude::*;
-
-use crate::{block::Block, matcher::Matcher, meme::*, shadow::ShadowBlend};
 
 pub struct GameMap {
     pub width: usize,
@@ -11,12 +10,12 @@ pub struct GameMap {
 }
 
 impl GameMap {
-    pub fn new(width: usize, height: usize) -> Option<GameMap> {
+    pub fn new(width: u8, height: u8) -> Option<GameMap> {
         if 0 != width && 0 != height && 0 == ((width - 2) * (height - 2)) % 2 {
             Some(GameMap {
-                width,
-                height,
-                data: vec![NO_MEME; width * height],
+                width: width as usize,
+                height: height as usize,
+                data: vec![NO_MEME; width as usize * height as usize],
             })
         } else {
             None
@@ -59,7 +58,7 @@ impl GameMap {
 
     pub fn playground_blocks(&self) -> Vec<Block> {
         (1..self.width - 1)
-            .flat_map(move |x| (1..self.height - 1).map(move |y| Block::new(x, y)))
+            .flat_map(move |x| (1..self.height - 1).map(move |y| Block { x, y }))
             .collect::<Vec<_>>()
     }
 
@@ -188,5 +187,33 @@ impl GameMap {
                 .map(|row| self.cast_horizontal_shadows(row, (None, None)))
                 .map(|shadows| Matcher::match_same(&shadows))
                 .any(|couples| !couples.is_empty())
+    }
+
+    // Check 2 block if they are matching and return the connection
+    pub fn connect(&self, blk1: &Block, blk2: &Block) -> Result<Vec<Block>, String> {
+        if let Err(_err) = self.check_border_block(blk1) {
+            panic!("Not a valid block to check, cannot check border");
+        }
+        if let Err(_err) = self.check_border_block(blk2) {
+            panic!("Not a valid block to check, cannot check border");
+        }
+        let meme1 = self.cell(blk1);
+        let meme2 = self.cell(blk2);
+        if NO_MEME == meme1 || NO_MEME == meme2 {
+            panic!("Cannot match with empty meme");
+        }
+        if self.cell(blk1) != self.cell(blk2) {
+            panic!("Cannot connect different meme, wait for twist in future version then!");
+        }
+        let mut track = Track::new(*blk1, *blk2);
+        while track.search(|blk| self.check_valid_empty_block(blk).is_ok()) {
+            print!(".");
+        }
+        println!();
+        if track.goal_found() {
+            Ok(track.backtrace())
+        } else {
+            Err("Not found".to_string())
+        }
     }
 }
