@@ -1,14 +1,8 @@
 [package]
-name = "meme_connect"
+name = "core"
 version = "0.1.0"
 authors = ["InNoobWeTrust"]
 edition = "2018"
 
-[workspace]
-members = [
-    "core",
-]
-
 [dependencies]
-core = { path = "./core" }
 rand = "0.7.3"

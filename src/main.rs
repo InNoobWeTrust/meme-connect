@@ -1,10 +1,9 @@
 extern crate rand;
 
-extern crate meme_connect;
+extern crate core;
 
+use core::prelude::*;
 use rand::prelude::*;
-
-use meme_connect::prelude::*;
 
 fn main() -> Result<(), String> {
     let mut rng = thread_rng();
