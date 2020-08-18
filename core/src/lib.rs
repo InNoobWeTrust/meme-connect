@@ -17,7 +17,7 @@ mod test_tracing_shadow {
         println!("Track: {:?}", TRACK);
         let wall = TRACK.len() - 1;
         println!("Wall position: {}", wall);
-        let traces = ShadowBlend::from(TRACK.to_vec(), wall, (None, None));
+        let traces = ShadowBlend::from(TRACK, wall, (None, None));
         assert_eq!(traces.traces[0].as_ref().unwrap().idx, 0);
         assert_eq!(traces.traces[0].as_ref().unwrap().meme, 1);
         assert!(traces.traces[1].is_none(), true);
@@ -30,7 +30,7 @@ mod test_tracing_shadow {
         let wall = TRACK.len() - 1;
         let vision = 1;
         println!("Wall position: {}, vision: {}", wall, vision);
-        let possible_traces = ShadowBlend::from(TRACK.to_vec(), wall, (Some(vision), None));
+        let possible_traces = ShadowBlend::from(TRACK, wall, (Some(vision), None));
         assert!(possible_traces.traces[0].is_none());
         assert!(possible_traces.traces[1].is_none());
     }
@@ -42,7 +42,7 @@ mod test_tracing_shadow {
         let wall = 3;
         let vision = 3;
         println!("Wall position: {}, vision: {}", wall, vision);
-        let traces = ShadowBlend::from(TRACK.to_vec(), wall, (Some(vision), Some(vision)));
+        let traces = ShadowBlend::from(TRACK, wall, (Some(vision), Some(vision)));
         assert_eq!(traces.traces[0].as_ref().unwrap().idx, 2);
         assert_eq!(traces.traces[0].as_ref().unwrap().meme, 2);
         assert_eq!(traces.traces[1].as_ref().unwrap().idx, 4);

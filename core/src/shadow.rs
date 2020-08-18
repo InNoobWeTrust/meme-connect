@@ -17,7 +17,7 @@ impl ShadowBlend {
     /// If wall position already has something then return it and not bother
     /// looking further.
     pub fn from(
-        track: Vec<Meme>,
+        track: &[Meme],
         wall_idx: usize,
         cast_ranges: (Option<usize>, Option<usize>),
     ) -> ShadowBlend {
@@ -77,7 +77,7 @@ impl ShadowBlend {
     ) -> Vec<ShadowBlend> {
         tracks
             .iter()
-            .map(|track| ShadowBlend::from(track.to_vec(), wall_idx, cast_ranges))
+            .map(|track| ShadowBlend::from(track, wall_idx, cast_ranges))
             .collect::<_>()
     }
 

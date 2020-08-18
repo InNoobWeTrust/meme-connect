@@ -13,7 +13,7 @@ enum ExploreFlag {
 }
 
 #[derive(Debug)]
-pub struct TrackStep {
+struct TrackStep {
     /// Position in game board
     pos: Block,
     /// Indexes of children
@@ -26,16 +26,6 @@ pub struct TrackStep {
     turns: u8,
     /// Status of current node
     flag: ExploreFlag,
-}
-
-impl TrackStep {
-    pub fn pos(&self) -> Block {
-        self.pos
-    }
-
-    pub fn direction(&self) -> Option<Direction> {
-        self.direction
-    }
 }
 
 #[derive(Debug)]

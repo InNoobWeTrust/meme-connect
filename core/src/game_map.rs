@@ -1,7 +1,4 @@
-extern crate rand;
-
 use crate::{block::Block, matcher::Matcher, meme::*, shadow::ShadowBlend, track::*};
-use rand::prelude::*;
 
 pub struct GameMap {
     pub width: usize,
@@ -134,16 +131,16 @@ impl GameMap {
         Ok(())
     }
 
+    /// Set pair of memes in order, the position is as instructed by `regions`.
+    /// Note: `regions` is consumed
     pub fn set_meme_regions<T>(
         &mut self,
         meme_lst: &mut T,
         regions: &mut Vec<&Block>,
-        rng: &mut ThreadRng,
     ) -> Result<(), String>
     where
         T: Iterator<Item = Meme>,
     {
-        regions.shuffle(rng);
         for meme in meme_lst {
             if 2 > regions.len() {
                 break;
@@ -189,7 +186,7 @@ impl GameMap {
                 .any(|couples| !couples.is_empty())
     }
 
-    // Check 2 block if they are matching and return the connection
+    // Check 2 blocks if they are matching and return the connection
     pub fn connect(&self, blk1: &Block, blk2: &Block) -> Result<Vec<Block>, String> {
         if let Err(_err) = self.check_border_block(blk1) {
             panic!("Not a valid block to check, cannot check border");
@@ -206,10 +203,7 @@ impl GameMap {
             panic!("Cannot connect different meme, wait for twist in future version then!");
         }
         let mut track = Track::new(*blk1, *blk2);
-        while track.search(|blk| self.check_valid_empty_block(blk).is_ok()) {
-            print!(".");
-        }
-        println!();
+        while track.search(|blk| self.check_valid_empty_block(blk).is_ok()) {}
         if track.goal_found() {
             Ok(track.backtrace())
         } else {

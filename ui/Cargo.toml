@@ -1,10 +1,8 @@
 [package]
-name = "core"
+name = "ui"
 version = "0.1.0"
 authors = ["InNoobWeTrust"]
 edition = "2018"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [dependencies]
+core = { path = "../core"}

@@ -7,8 +7,10 @@ edition = "2018"
 [workspace]
 members = [
     "core",
+    "ui",
 ]
 
 [dependencies]
 core = { path = "./core" }
-rand = "0.7.3"
+ui = { path = "./ui" }
+macroquad = "0.2.9"
