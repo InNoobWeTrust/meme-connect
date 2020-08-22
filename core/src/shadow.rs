@@ -20,7 +20,7 @@ impl ShadowBlend {
         track: &[Meme],
         wall_idx: usize,
         cast_ranges: (Option<usize>, Option<usize>),
-    ) -> ShadowBlend {
+    ) -> Self {
         if wall_idx >= track.len() {
             panic!("Wrong wall position");
         } else if cast_ranges
@@ -34,7 +34,7 @@ impl ShadowBlend {
         {
             panic!("Wrong cast range forward");
         } else if track[wall_idx] != NO_MEME {
-            ShadowBlend {
+            Self {
                 traces: [None, None],
                 blocked: true,
             }
@@ -63,7 +63,7 @@ impl ShadowBlend {
                     idx: pos_on_track,
                     meme,
                 });
-            ShadowBlend {
+            Self {
                 traces: [trace_bwd, trace_fwd],
                 blocked: false,
             }
@@ -74,7 +74,7 @@ impl ShadowBlend {
         tracks: Vec<Vec<Meme>>,
         wall_idx: usize,
         cast_ranges: (Option<usize>, Option<usize>),
-    ) -> Vec<ShadowBlend> {
+    ) -> Vec<Self> {
         tracks
             .iter()
             .map(|track| ShadowBlend::from(track, wall_idx, cast_ranges))

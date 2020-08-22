@@ -41,8 +41,8 @@ pub struct Track {
 }
 
 impl Track {
-    pub fn new(start: Block, goal: Block) -> Track {
-        Track {
+    pub fn new(start: Block, goal: Block) -> Self {
+        Self {
             start,
             goal,
             search_tree: vec![TrackStep {

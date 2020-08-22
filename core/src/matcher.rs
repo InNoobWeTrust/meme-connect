@@ -33,7 +33,7 @@ impl Matcher {
     /// After casting shadows on a wall, if 2 shadows with the same type have
     /// no blocking shadow(s) in between, then there is a match
     pub fn match_same(shadow_wall: &[ShadowBlend]) -> Vec<(usize, usize)> {
-        Matcher::match_condition(shadow_wall, |w| {
+        Self::match_condition(shadow_wall, |w| {
             if !(w[0].1.intersect_meme(w[1].1).is_empty()) {
                 Some((w[0].0, w[1].0))
             } else {
@@ -44,7 +44,7 @@ impl Matcher {
 
     /// Match single type of block, for matching user chosen couple of blocks
     pub fn match_only_meme(shadow_wall: &[ShadowBlend], meme: Meme) -> Vec<(usize, usize)> {
-        Matcher::match_condition(shadow_wall, |w| {
+        Self::match_condition(shadow_wall, |w| {
             if w[0].1.memes().contains(&meme) && w[1].1.memes().contains(&meme) {
                 Some((w[0].0, w[1].0))
             } else {

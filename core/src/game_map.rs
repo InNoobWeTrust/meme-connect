@@ -1,18 +1,18 @@
 use crate::{block::Block, matcher::Matcher, meme::*, shadow::ShadowBlend, track::*};
 
 pub struct GameMap {
-    pub width: usize,
-    pub height: usize,
+    pub columns: usize,
+    pub rows: usize,
     data: Vec<Meme>,
 }
 
 impl GameMap {
-    pub fn new(width: u8, height: u8) -> Option<GameMap> {
-        if 0 != width && 0 != height && 0 == ((width - 2) * (height - 2)) % 2 {
-            Some(GameMap {
-                width: width as usize,
-                height: height as usize,
-                data: vec![NO_MEME; width as usize * height as usize],
+    pub fn new(columns: u8, rows: u8) -> Option<Self> {
+        if 0 != columns && 0 != rows && 0 == ((columns - 2) * (rows - 2)) % 2 {
+            Some(Self {
+                columns: columns as usize,
+                rows: rows as usize,
+                data: vec![NO_MEME; columns as usize * rows as usize],
             })
         } else {
             None
@@ -24,14 +24,14 @@ impl GameMap {
     ///////////////////////////////////////////////////////////////////////////
 
     pub fn cell(&self, blk: &Block) -> Meme {
-        self.data[blk.y * self.width + blk.x]
+        self.data[blk.row * self.columns + blk.column]
     }
 
     fn col(&self, index: usize) -> Vec<Meme> {
         self.data
             .iter()
             .skip(index)
-            .step_by(self.width)
+            .step_by(self.columns)
             .copied()
             .collect::<Vec<_>>()
     }
@@ -39,23 +39,23 @@ impl GameMap {
     fn row(&self, index: usize) -> Vec<Meme> {
         self.data
             .iter()
-            .skip(index * self.width)
-            .take(self.width)
+            .skip(index * self.columns)
+            .take(self.columns)
             .copied()
             .collect::<Vec<_>>()
     }
 
     fn rows(&self) -> Vec<Vec<Meme>> {
-        (0..self.height).map(|y| self.row(y)).collect::<Vec<_>>()
+        (0..self.rows).map(|y| self.row(y)).collect::<Vec<_>>()
     }
 
     fn cols(&self) -> Vec<Vec<Meme>> {
-        (0..self.width).map(|x| self.col(x)).collect::<Vec<_>>()
+        (0..self.columns).map(|x| self.col(x)).collect::<Vec<_>>()
     }
 
     pub fn playground_blocks(&self) -> Vec<Block> {
-        (1..self.width - 1)
-            .flat_map(move |x| (1..self.height - 1).map(move |y| Block { x, y }))
+        (1..self.columns - 1)
+            .flat_map(move |x| (1..self.rows - 1).map(move |y| Block { column: x, row: y }))
             .collect::<Vec<_>>()
     }
 
@@ -81,17 +81,17 @@ impl GameMap {
 
     fn is_idx_border(&self, idx: usize) -> bool {
         // Top border
-        idx < self.width ||
+        idx < self.columns ||
             // Bottom border
-            idx > self.width * self.height - 1 ||
+            idx > self.columns * self.rows - 1 ||
             // Left border
-            idx % self.width == 0 ||
+            idx % self.columns == 0 ||
             // Right border
-            idx % self.width == self.width - 1
+            idx % self.columns == self.columns - 1
     }
 
     fn block2idx(&self, blk: &Block) -> usize {
-        blk.y * self.width + blk.x
+        blk.row * self.columns + blk.column
     }
 
     fn check_border_block(&self, blk: &Block) -> Result<(), String> {
@@ -176,11 +176,11 @@ impl GameMap {
     }
 
     pub fn still_has_move(&self) -> bool {
-        (0..self.width - 1) // Vertical walls
+        (0..self.columns - 1) // Vertical walls
             .map(|col| self.cast_vertical_shadows(col, (None, None)))
             .map(|shadows| Matcher::match_same(&shadows))
             .any(|couples| !couples.is_empty())
-            || (1..self.height - 1) // Horizontal walls
+            || (1..self.rows - 1) // Horizontal walls
                 .map(|row| self.cast_horizontal_shadows(row, (None, None)))
                 .map(|shadows| Matcher::match_same(&shadows))
                 .any(|couples| !couples.is_empty())

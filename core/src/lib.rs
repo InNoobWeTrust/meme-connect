@@ -53,8 +53,8 @@ mod test_tracing_shadow {
     fn test_shadow_connections() -> Result<(), String> {
         let mut game_map = GameMap::new(6, 6).unwrap();
         println!("Game map:\n{}", game_map._fmt());
-        game_map.set_meme(1, &Block { x: 1, y: 1 })?;
-        game_map.set_meme(1, &Block { x: 4, y: 4 })?;
+        game_map.set_meme(1, &Block { column: 1, row: 1 })?;
+        game_map.set_meme(1, &Block { column: 4, row: 4 })?;
         println!("Game map after filling some couples:\n{}", game_map._fmt());
         let horizontal_shadows = game_map.cast_horizontal_shadows(0, (None, None));
         println!("Horizontal shadows: {:?}", horizontal_shadows);

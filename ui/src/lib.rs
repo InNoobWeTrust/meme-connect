@@ -1,7 +1,3 @@
-extern crate core;
-
-use core::prelude::*;
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Coordinate {
     pub x: f32,
@@ -26,7 +22,7 @@ pub struct GameBoard {
 }
 
 impl GameBoard {
-    pub fn new(game_map: &GameMap, screen_size: RegionSize) -> GameBoard {
+    pub fn new(screen_size: RegionSize, cols: usize, rows: usize) -> Self {
         // TODO: Layout game board based on screen orientation
         let x = screen_size.width * 0.1;
         let y = screen_size.height * 0.1;
@@ -42,20 +38,20 @@ impl GameBoard {
         };
 
         // TODO: Keep uniform texture ratio
-        let block_width = width / game_map.width as f32;
-        let block_height = height / game_map.height as f32;
+        let block_width = width / cols as f32;
+        let block_height = height / rows as f32;
         let block_size = RegionSize {
             width: block_width,
             height: block_height,
         };
 
-        GameBoard { board, block_size }
+        Self { board, block_size }
     }
 
     // TODO: Auto-fit instead of stretching
-    pub fn calc_block_region(&self, blk: &Block) -> Region {
-        let x = self.board.coord.x + blk.x as f32 * self.block_size.width;
-        let y = self.board.coord.y + blk.y as f32 * self.block_size.height;
+    pub fn calc_block_region(&self, col: usize, row: usize) -> Region {
+        let x = self.board.coord.x + col as f32 * self.block_size.width;
+        let y = self.board.coord.y + row as f32 * self.block_size.height;
         let coord = Coordinate { x, y };
         Region {
             coord,
