@@ -1,3 +1,5 @@
 /target
-/core/target
+/data_type/target
+/board/target
 /ui/target
+/updater/target

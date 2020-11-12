@@ -1,0 +1,9 @@
+set path+=src/**
+set path+=data_type
+set path+=data_type/src/**
+set path+=board
+set path+=board/src/**
+set path+=ui
+set path+=ui/src/**
+set path+=updater
+set path+=updater/src/**
