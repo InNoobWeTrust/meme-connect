@@ -27,8 +27,8 @@ mod bound_aware_test {
     fn no_overlap() {
         let low = 0..=5;
         let high = 6..=10;
-        let low_rev = 5..=0;
-        let high_rev = 10..=6;
+        let low_rev = (0..=5).rev();
+        let high_rev = (6..=10).rev();
 
         let l_h = low.iter_overlap(&high);
         let l_hr = low.iter_overlap(&high_rev);
@@ -58,9 +58,9 @@ mod bound_aware_test {
     #[test]
     fn overlap() {
         let first = 0..=5;
-        let first_rev = 5..=0;
+        let first_rev = (0..=5).rev();
         let second = 5..=10;
-        let second_rev = 10..=5;
+        let second_rev = (5..=10).rev();
 
         assert_eq!(first.iter_overlap(&second).count(), 1);
         assert_eq!(first.iter_overlap(&second_rev).count(), 1);
