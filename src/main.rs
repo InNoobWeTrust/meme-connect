@@ -1,20 +1,25 @@
 use ::board::prelude::*;
-use ::macroquad::*;
+use ::macroquad::prelude::*;
 use ::ui::prelude::*;
 use std::process::exit;
 
-const TRANSPARENT: Color = Color([255, 255, 255, 255]);
+const TRANSPARENT: Color = Color {
+    r: 255.,
+    g: 255.,
+    b: 255.,
+    a: 255.,
+};
 
 struct Drawer;
 
 impl Drawer {
     fn draw_loading_screen() {
         let loading_string = "Loading...";
-        let loading_string_size = measure_text(loading_string, 36.);
+        let loading_string_size = measure_text(loading_string, None, 36, 1.);
         draw_text(
             "Loading",
-            screen_width() / 2. - loading_string_size.0,
-            screen_height() / 2. - loading_string_size.1,
+            screen_width() / 2. - loading_string_size.width,
+            screen_height() / 2. - loading_string_size.height,
             36.,
             WHITE,
         );
@@ -55,7 +60,9 @@ impl BoardDrawer {
     async fn new() -> Self {
         BoardDrawer {
             // Load textures
-            sprite_sheet: load_texture("assets/poke_28x25+21_32x32.png").await,
+            sprite_sheet: load_texture("assets/poke_28x25+21_32x32.png")
+                .await
+                .unwrap(),
         }
     }
 
@@ -113,6 +120,9 @@ impl BoardDrawer {
                 dest_size: Some(vec2(sprite_width, sprite_height)),
                 source: Self::sprite2rect(sprite),
                 rotation: 0.,
+                flip_x: false,
+                flip_y: false,
+                pivot: None,
             },
         );
     }
