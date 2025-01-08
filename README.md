@@ -2,7 +2,10 @@
 
 _*Important notice:*_ Work in progress, expect broken features. For now, just basic things implemented.
 
-<img width="1673" alt="image" src="https://github.com/user-attachments/assets/5aaa930e-6b20-4ffd-94b8-3e5133b538a3" />
+<a href="https://meme-connect.innoobwetrust.com/" target="_blank">
+  <img width="1673" alt="image" src="https://github.com/user-attachments/assets/5aaa930e-6b20-4ffd-94b8-3e5133b538a3" />
+  Demo
+</a>
 
 ## Requirements:
 
