@@ -5,6 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meme connect</title>
+    <link data-trunk rel="rust">
+    <link data-trunk rel="copy-dir" href="assets">
     <style>
         html,
         body,
@@ -24,8 +26,11 @@
 <body>
     <canvas id="glcanvas" tabindex='1'></canvas>
     <!-- Minified and statically hosted version of https://github.com/not-fl3/macroquad/blob/master/js/mq_js_bundle.js -->
-    <script src="mq_js_bundle_0.3.8.js"></script>
-    <script>load("main.wasm");</script> <!-- Your compiled wasm file -->
+    <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
+    <script>
+        wasm_url = document.querySelector('head > link[rel="preload"][type="application/wasm"]').href;
+        load(wasm_url);
+    </script>
 </body>
 
 </html>

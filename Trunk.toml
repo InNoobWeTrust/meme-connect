@@ -1,0 +1,5 @@
+[build]
+inject-scripts = false
+
+[serve]
+open = true

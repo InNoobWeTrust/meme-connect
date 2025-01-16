@@ -1,7 +1,6 @@
 use ::board::prelude::*;
 use ::macroquad::prelude::*;
 use ::ui::prelude::*;
-use std::process::exit;
 
 const TRANSPARENT: Color = Color {
     r: 255.,
@@ -112,7 +111,7 @@ impl BoardDrawer {
 
         // Texture
         draw_texture_ex(
-            self.sprite_sheet,
+            &self.sprite_sheet,
             sprite_x,
             sprite_y,
             TRANSPARENT,
@@ -175,15 +174,13 @@ impl Interaction {
         }
     }
 
-    fn check_exit(&self) {
-        if is_key_pressed(KeyCode::Escape) {
-            exit(0);
-        }
+    fn check_exit(&self) -> bool {
+        is_key_pressed(KeyCode::Escape)
     }
 }
 
 #[macroquad::main("meme-connect")]
-async fn main() {
+pub async fn main() {
     Drawer::draw_loading_screen();
     // Seed random
     rand::srand((get_time() * 1000.) as u64);
@@ -209,9 +206,8 @@ async fn main() {
     let mut debug_paths: Vec<Path> = Vec::new();
     loop {
         //-------------------------------------------------Check exit condition
-        interaction.check_exit();
-        if mapping.no_more_move() {
-            exit(0);
+        if interaction.check_exit() || mapping.no_more_move() {
+            break;
         }
 
         //--------------------------Update current screen size and board region
